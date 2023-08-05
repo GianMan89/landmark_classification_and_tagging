@@ -2,7 +2,7 @@ import math
 import torch
 import torch.utils.data
 from pathlib import Path
-from torchvision import datasets, transforms
+from torchvision import datasets, transforms as T
 import multiprocessing
 
 from .helpers import compute_mean_and_std, get_data_location
@@ -10,7 +10,10 @@ import matplotlib.pyplot as plt
 
 
 def get_data_loaders(
-    batch_size: int = 32, valid_size: float = 0.2, num_workers: int = -1, limit: int = -1
+    batch_size: int = 32,
+    valid_size: float = 0.2,
+    num_workers: int = -1,
+    limit: int = -1,
 ):
     """
     Create and returns the train_one_epoch, validation and test data loaders.
@@ -46,14 +49,32 @@ def get_data_loaders(
     # HINT: resize the image to 256 first, then crop them to 224, then add the
     # appropriate transforms for that step
     data_transforms = {
-        "train": transforms.Compose(
-            # YOUR CODE HERE
+        "train": T.Compose(
+            [
+                T.Resize(256),
+                T.RandomCrop(224),
+                T.RandomHorizontalFlip(0.25),
+                T.RandomRotation(15),
+                T.RandomVerticalFlip(0.1),
+                T.ToTensor(),
+                T.Normalize(mean, std),
+            ]
         ),
-        "valid": transforms.Compose(
-            # YOUR CODE HERE
+        "valid": T.Compose(
+            [
+                T.Resize(256),
+                T.CenterCrop(224),
+                T.ToTensor(),
+                T.Normalize(mean, std),
+            ]
         ),
-        "test": transforms.Compose(
-            # YOUR CODE HERE
+        "test": T.Compose(
+            [
+                T.Resize(256),
+                T.CenterCrop(224),
+                T.ToTensor(),
+                T.Normalize(mean, std),
+            ]
         ),
     }
 
@@ -62,6 +83,7 @@ def get_data_loaders(
         base_path / "train",
         # YOUR CODE HERE: add the appropriate transform that you defined in
         # the data_transforms dictionary
+        data_transforms["train"],
     )
     # The validation dataset is a split from the train_one_epoch dataset, so we read
     # from the same folder, but we apply the transforms for validation
@@ -69,6 +91,7 @@ def get_data_loaders(
         base_path / "train",
         # YOUR CODE HERE: add the appropriate transform that you defined in
         # the data_transforms dictionary
+        data_transforms["valid"],
     )
 
     # obtain training indices that will be used for validation
@@ -85,7 +108,7 @@ def get_data_loaders(
 
     # define samplers for obtaining training and validation batches
     train_sampler = torch.utils.data.SubsetRandomSampler(train_idx)
-    valid_sampler  = # YOUR CODE HERE
+    valid_sampler = torch.utils.data.SubsetRandomSampler(valid_idx)
 
     # prepare data loaders
     data_loaders["train"] = torch.utils.data.DataLoader(
@@ -95,13 +118,17 @@ def get_data_loaders(
         num_workers=num_workers,
     )
     data_loaders["valid"] = torch.utils.data.DataLoader(
-        # YOUR CODE HERE
+        valid_data,
+        batch_size=batch_size,
+        sampler=valid_sampler,
+        num_workers=num_workers,
     )
 
     # Now create the test data loader
     test_data = datasets.ImageFolder(
         base_path / "test",
         # YOUR CODE HERE (add the test transform)
+        data_transforms["test"],
     )
 
     if limit > 0:
@@ -112,6 +139,10 @@ def get_data_loaders(
 
     data_loaders["test"] = torch.utils.data.DataLoader(
         # YOUR CODE HERE (remember to add shuffle=False as well)
+        test_data,
+        batch_size=batch_size,
+        sampler=test_sampler,
+        shuffle=False,
     )
 
     return data_loaders
@@ -129,17 +160,17 @@ def visualize_one_batch(data_loaders, max_n: int = 5):
     # YOUR CODE HERE:
     # obtain one batch of training images
     # First obtain an iterator from the train dataloader
-    dataiter  = # YOUR CODE HERE
+    dataiter = iter(data_loaders["train"])
     # Then call the .next() method on the iterator you just
     # obtained
-    images, labels  = # YOUR CODE HERE
+    images, labels = dataiter.next()
 
     # Undo the normalization (for visualization purposes)
     mean, std = compute_mean_and_std()
-    invTrans = transforms.Compose(
+    invTrans = T.Compose(
         [
-            transforms.Normalize(mean=[0.0, 0.0, 0.0], std=1 / std),
-            transforms.Normalize(mean=-mean, std=[1.0, 1.0, 1.0]),
+            T.Normalize(mean=[0.0, 0.0, 0.0], std=1 / std),
+            T.Normalize(mean=-mean, std=[1.0, 1.0, 1.0]),
         ]
     )
 
@@ -147,7 +178,7 @@ def visualize_one_batch(data_loaders, max_n: int = 5):
 
     # YOUR CODE HERE:
     # Get class names from the train data loader
-    class_names  = # YOUR CODE HERE
+    class_names = data_loaders["train"].dataset.classes
 
     # Convert from BGR (the format used by pytorch) to
     # RGB (the format expected by matplotlib)
@@ -175,8 +206,11 @@ def data_loaders():
 
 
 def test_data_loaders_keys(data_loaders):
-
-    assert set(data_loaders.keys()) == {"train", "valid", "test"}, "The keys of the data_loaders dictionary should be train, valid and test"
+    assert set(data_loaders.keys()) == {
+        "train",
+        "valid",
+        "test",
+    }, "The keys of the data_loaders dictionary should be train, valid and test"
 
 
 def test_data_loaders_output_type(data_loaders):
@@ -186,20 +220,23 @@ def test_data_loaders_output_type(data_loaders):
 
     assert isinstance(images, torch.Tensor), "images should be a Tensor"
     assert isinstance(labels, torch.Tensor), "labels should be a Tensor"
-    assert images[0].shape[-1] == 224, "The tensors returned by your dataloaders should be 224x224. Did you " \
-                                       "forget to resize and/or crop?"
+    assert images[0].shape[-1] == 224, (
+        "The tensors returned by your dataloaders should be 224x224. Did you "
+        "forget to resize and/or crop?"
+    )
 
 
 def test_data_loaders_output_shape(data_loaders):
     dataiter = iter(data_loaders["train"])
     images, labels = dataiter.next()
 
-    assert len(images) == 2, f"Expected a batch of size 2, got size {len(images)}"
+    assert (
+        len(images) == 2
+    ), f"Expected a batch of size 2, got size {len(images)}"
     assert (
         len(labels) == 2
     ), f"Expected a labels tensor of size 2, got size {len(labels)}"
 
 
 def test_visualize_one_batch(data_loaders):
-
     visualize_one_batch(data_loaders, max_n=2)
