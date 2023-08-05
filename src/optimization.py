@@ -10,7 +10,7 @@ def get_loss():
     """
 
     # YOUR CODE HERE: select a loss appropriate for classification
-    loss  = # YOUR CODE HERE
+    loss = nn.CrossEntropyLoss()
 
     return loss
 
@@ -36,7 +36,10 @@ def get_optimizer(
         # optimizer. Use the input parameters learning_rate, momentum
         # and weight_decay
         opt = torch.optim.SGD(
-            # YOUR CODE HERE
+            params=model.parameters(),
+            lr=learning_rate,
+            momentum=momentum,
+            weight_decay=weight_decay,
         )
 
     elif optimizer.lower() == "adam":
@@ -44,7 +47,9 @@ def get_optimizer(
         # optimizer. Use the input parameters learning_rate, momentum
         # and weight_decay
         opt = torch.optim.Adam(
-            # YOUR CODE HERE
+            params=model.parameters(),
+            lr=learning_rate,
+            weight_decay=weight_decay,
         )
     else:
         raise ValueError(f"Optimizer {optimizer} not supported")
@@ -64,7 +69,6 @@ def fake_model():
 
 
 def test_get_loss():
-
     loss = get_loss()
 
     assert isinstance(
@@ -73,29 +77,29 @@ def test_get_loss():
 
 
 def test_get_optimizer_type(fake_model):
-
     opt = get_optimizer(fake_model)
 
-    assert isinstance(opt, torch.optim.SGD), f"Expected SGD optimizer, got {type(opt)}"
+    assert isinstance(
+        opt, torch.optim.SGD
+    ), f"Expected SGD optimizer, got {type(opt)}"
 
 
 def test_get_optimizer_is_linked_with_model(fake_model):
-
     opt = get_optimizer(fake_model)
 
     assert opt.param_groups[0]["params"][0].shape == torch.Size([256, 16])
 
 
 def test_get_optimizer_returns_adam(fake_model):
-
     opt = get_optimizer(fake_model, optimizer="adam")
 
     assert opt.param_groups[0]["params"][0].shape == torch.Size([256, 16])
-    assert isinstance(opt, torch.optim.Adam), f"Expected SGD optimizer, got {type(opt)}"
+    assert isinstance(
+        opt, torch.optim.Adam
+    ), f"Expected SGD optimizer, got {type(opt)}"
 
 
 def test_get_optimizer_sets_learning_rate(fake_model):
-
     opt = get_optimizer(fake_model, optimizer="adam", learning_rate=0.123)
 
     assert (
@@ -104,7 +108,6 @@ def test_get_optimizer_sets_learning_rate(fake_model):
 
 
 def test_get_optimizer_sets_momentum(fake_model):
-
     opt = get_optimizer(fake_model, optimizer="SGD", momentum=0.123)
 
     assert (
@@ -113,7 +116,6 @@ def test_get_optimizer_sets_momentum(fake_model):
 
 
 def test_get_optimizer_sets_weight_decat(fake_model):
-
     opt = get_optimizer(fake_model, optimizer="SGD", weight_decay=0.123)
 
     assert (
