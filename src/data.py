@@ -53,9 +53,7 @@ def get_data_loaders(
             [
                 T.Resize(256),
                 T.RandomCrop(224),
-                T.RandomHorizontalFlip(0.25),
-                T.RandomRotation(15),
-                T.RandomVerticalFlip(0.1),
+                T.AutoAugment(),
                 T.ToTensor(),
                 T.Normalize(mean, std),
             ]
@@ -116,12 +114,14 @@ def get_data_loaders(
         batch_size=batch_size,
         sampler=train_sampler,
         num_workers=num_workers,
+        shuffle=False,
     )
     data_loaders["valid"] = torch.utils.data.DataLoader(
         valid_data,
         batch_size=batch_size,
         sampler=valid_sampler,
         num_workers=num_workers,
+        shuffle=False,
     )
 
     # Now create the test data loader
@@ -142,6 +142,7 @@ def get_data_loaders(
         test_data,
         batch_size=batch_size,
         sampler=test_sampler,
+        num_workers=num_workers,
         shuffle=False,
     )
 

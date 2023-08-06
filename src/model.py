@@ -13,51 +13,53 @@ class MyModel(nn.Module):
         # to use (like nn.Dropout(p=dropout))
 
         self.model = nn.Sequential(
+            # first conv layer
             nn.Conv2d(
-                in_channels=3, out_channels=16, kernel_size=3, padding=1
-            ),  # -> [batch_size, 16, 224, 224]
-            nn.BatchNorm2d(16),
-            nn.ReLU(),
-            nn.MaxPool2d(
-                kernel_size=2, stride=2
-            ),  # -> [batch_size, 16, 112, 112]
-            nn.Conv2d(
-                in_channels=16, out_channels=32, kernel_size=3, padding=1
-            ),  # -> [batch_size, 32, 112, 112]
+                3, 32, kernel_size=3, padding=1
+            ),  # -> [batch_size, 32, 224, 224]
             nn.BatchNorm2d(32),
             nn.ReLU(),
             nn.MaxPool2d(
                 kernel_size=2, stride=2
-            ),  # -> [batch_size, 32, 56, 56]
+            ),  # -> [batch_size, 32, 112, 112]
+            # second conv layer
             nn.Conv2d(
-                in_channels=32, out_channels=64, kernel_size=3, padding=1
-            ),  # -> [batch_size, 64, 56, 56]
+                32, 64, kernel_size=3, padding=1
+            ),  # -> [batch_size, 64, 112, 112]
             nn.BatchNorm2d(64),
             nn.ReLU(),
             nn.MaxPool2d(
                 kernel_size=2, stride=2
-            ),  # -> [batch_size, 64, 28, 28]
-            nn.Conv2d(
-                in_channels=64, out_channels=128, kernel_size=3, padding=1
-            ),  # -> [batch_size, 128, 28, 28]
+            ),  # -> [batch_size, 64, 56, 56]
+            # third conv layer
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
             nn.BatchNorm2d(128),
             nn.ReLU(),
             nn.MaxPool2d(
                 kernel_size=2, stride=2
-            ),  # -> [batch_size, 128, 14, 14]
-            nn.Conv2d(
-                in_channels=128, out_channels=256, kernel_size=3, padding=1
-            ),  # -> [batch_size, 256, 14, 14]
+            ),  # -> [batch_size, 128, 28, 28]
+            # fourth conv layer
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),
             nn.BatchNorm2d(256),
             nn.ReLU(),
             nn.MaxPool2d(
                 kernel_size=2, stride=2
-            ),  # -> [batch_size, 256, 7, 7]
-            nn.Flatten(),  # -> [batch_size, 256 * 7 * 7]
-            nn.Linear(256 * 7 * 7, 1024),  # -> [batch_size, 1024]
-            nn.Dropout(p=dropout),
-            nn.BatchNorm1d(1024),
+            ),  # -> [batch_size, 256, 14, 14]
+            # fifth conv layer
+            nn.Conv2d(256, 512, kernel_size=3, padding=1),
+            nn.BatchNorm2d(512),
             nn.ReLU(),
+            nn.MaxPool2d(
+                kernel_size=2, stride=2
+            ),  # -> [batch_size, 512, 7, 7]
+            # fully connected layers
+            nn.Flatten(),  # -> [batch_size, 512 * 7 * 7]
+            nn.Linear(512 * 7 * 7, 2048),  # -> [batch_size, 2048]
+            nn.ReLU(),
+            nn.Dropout(p=dropout),
+            nn.Linear(2048, 1024),  # -> [batch_size, 1024]
+            nn.ReLU(),
+            nn.Dropout(p=dropout),
             nn.Linear(1024, num_classes),
         )  # -> [batch_size, num_classes]
 

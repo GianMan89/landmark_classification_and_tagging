@@ -125,6 +125,8 @@ def optimize(
         mode="min",
         threshold=1e-4,
         patience=5,
+        factor=0.2,
+        min_lr=0.001,
     )  # YOUR CODE HERE
 
     for epoch in range(1, n_epochs + 1):
