@@ -5,31 +5,34 @@ import torch.nn as nn
 
 
 def get_model_transfer_learning(model_name="resnet18", n_classes=50):
-
     # Get the requested architecture
     if hasattr(models, model_name):
-
         model_transfer = getattr(models, model_name)(pretrained=True)
 
     else:
+        torchvision_major_minor = ".".join(
+            torchvision.__version__.split(".")[:2]
+        )
 
-        torchvision_major_minor = ".".join(torchvision.__version__.split(".")[:2])
-
-        raise ValueError(f"Model {model_name} is not known. List of available models: "
-                         f"https://pytorch.org/vision/{torchvision_major_minor}/models.html")
+        raise ValueError(
+            f"Model {model_name} is not known. List of available models: "
+            f"https://pytorch.org/vision/{torchvision_major_minor}/models.html"
+        )
 
     # Freeze all parameters in the model
     # HINT: loop over all parameters. If "param" is one parameter,
     # "param.requires_grad = False" freezes it
-    # YOUR CODE HERE
+    for param in model_transfer.parameters():
+        if param.requires_grad:
+            param.requires_grad = False
 
     # Add the linear layer at the end with the appropriate number of classes
     # 1. get numbers of features extracted by the backbone
-    num_ftrs  = # YOUR CODE HERE
+    num_ftrs = model_transfer.fc.in_features  # YOUR CODE HERE
 
     # 2. Create a new linear layer with the appropriate number of inputs and
     #    outputs
-    model_transfer.fc  = # YOUR CODE HERE
+    model_transfer.fc = nn.Linear(num_ftrs, n_classes)  # YOUR CODE HERE
 
     return model_transfer
 
@@ -48,7 +51,6 @@ def data_loaders():
 
 
 def test_get_model_transfer_learning(data_loaders):
-
     model = get_model_transfer_learning(n_classes=23)
 
     dataiter = iter(data_loaders["train"])
