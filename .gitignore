@@ -4,6 +4,9 @@ landmark_images/
 # Weights backup
 __weights_backup
 
+# Checkpoints
+checkpoints/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
