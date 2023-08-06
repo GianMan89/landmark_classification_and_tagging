@@ -1,5 +1,6 @@
 # Landmark images
 landmark_images/
+app_images/
 
 # Weights backup
 __weights_backup
